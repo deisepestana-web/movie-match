@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Movie Match</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+:root {
+  --bg: #101014; --surface: #1a1a20; --surface2: #22222a;
+  --red: #E50914; --red-dark: #b5070f; --text: #f0f0f0;
+  --text2: #a0a0b0; --border: rgba(255,255,255,0.1); --radius: 14px;
+}
+html, body { background: var(--bg); color: var(--text); min-height: 100vh; }
+body { display: flex; justify-content: center; }
+.phone {
+  width: 100%; max-width: 430px; min-height: 100vh;
+  background: var(--bg); position: relative;
+}
+@media (min-width: 500px) {
+  body { background: #060608; align-items: flex-start; padding: 24px 0; }
+  .phone { min-height: auto; border-radius: 40px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
+}
+.screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeIn 0.3s ease; }
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 12px; color: var(--text2); flex-shrink: 0; }
+.header { padding: 8px 20px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.logo { font-size: 22px; font-weight: 800; color: var(--red); letter-spacing: -0.5px; }
+.logo span { color: var(--text); }
+.content { flex: 1; padding: 0 20px 40px; overflow-y: auto; }
+.btn-primary { width: 100%; padding: 16px; background: var(--red); color: #fff; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-primary:hover { background: var(--red-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary { width: 100%; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+.btn-secondary:hover { background: var(--surface); }
+.tag { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); color: var(--text2); transition: all 0.15s; margin: 4px; }
+.tag.selected { background: var(--red); border-color: var(--red); color: #fff; }
+.input-field { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--text); font-size: 15px; outline: none; transition: border-color 0.2s; }
+.input-field:focus { border-color: var(--red); }
+.input-field::placeholder { color: var(--text2); }
+.label { font-size: 12px; color: var(--text2); margin-bottom: 8px; margin-top: 18px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+.section-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.section-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.streaming-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.streaming-item { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 18px 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.streaming-item.selected { border-color: var(--red); background: rgba(229,9,20,0.1); }
+.streaming-item .s-logo { font-size: 30px; margin-bottom: 8px; }
+.streaming-item .s-name { font-size: 13px; font-weight: 700; }
+.progress-bar { height: 3px; background: var(--surface2); border-radius: 2px; margin-bottom: 28px; }
+.progress-fill { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.4s; }
+.genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.genre-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px; text-align: center; cursor: pointer; transition: all 0.15s; font-size: 14px; }
+.genre-item.selected { background: rgba(229,9,20,0.12); border-color: var(--red); color: #fff; }
+.mode-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 24px 20px; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+.mode-card:hover { border-color: var(--red); transform: translateY(-2px); }
+.mode-card .icon { font-size: 38px; margin-bottom: 12px; }
+.mode-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.mode-card p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+.movie-card { background: var(--surface); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; border: 1px solid var(--border); }
+.movie-poster { width: 100%; height: 210px; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+.movie-info { padding: 16px; }
+.movie-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+.movie-meta { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+.movie-desc { font-size: 14px; color: var(--text); line-height: 1.65; margin-bottom: 12px; }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 6px; margin-bottom: 6px; }
+.badge-match { background: var(--red); color: #fff; font-size: 13px; }
+.match-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.trailer-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--surface2); border-radius: 10px; color: var(--text); text-decoration: none; font-size: 14px; font-weight: 500; border: 1px solid var(--border); margin-top: 4px; }
+.trailer-btn:hover { background: #2a2a35; }
+.textarea-field { width: 100%; min-height: 140px; resize: vertical; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--text); font-size: 15px; outline: none; font-family: inherit; line-height: 1.6; transition: border-color 0.2s; }
+.textarea-field:focus { border-color: var(--red); }
+.textarea-field::placeholder { color: var(--text2); }
+.spin { display: inline-block; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #2a2a35; border: 1px solid var(--border); border-radius: 12px; padding: 12px 22px; font-size: 14px; color: var(--text); z-index: 9999; transition: opacity 0.35s; max-width: 320px; text-align: center; pointer-events: none; opacity: 0; white-space: nowrap; }
+.warn-box { background: rgba(230,126,34,0.1); border: 1px solid #e67e22; border-radius: 10px; padding: 10px 13px; margin-bottom: 12px; font-size: 13px; color: #e67e22; line-height: 1.5; }
+.warn-box a { color: #e67e22; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding: 40px 28px;">
+    <div style="text-align:center; margin-bottom:52px;">
+      <div style="font-size:64px; margin-bottom:16px;">🎬</div>
+      <div style="font-size:34px; font-weight:800; color:var(--red); letter-spacing:-1px;">Movie<span style="color:var(--text);">Match</span></div>
+      <div style="font-size:15px; color:var(--text2); margin-top:10px; line-height:1.5;">Descubra seu próximo filme favorito<br>nos streamings que você assina.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:20px; padding:28px; border:1px solid var(--border);">
+      <p style="text-align:center; color:var(--text2); font-size:14px; margin-bottom:22px; line-height:1.6;">Entre para personalizar suas<br>recomendações de filmes</p>
+      <button class="btn-primary" onclick="goTo('s-streaming')">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path d="M43.6 20H24v8h11.3C33.7 32.5 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.4 7 29 5 24 5 13 5 4 14 4 24s9 19 20 19c10.2 0 19-7.3 19-19 0-1.3-.1-2.7-.4-4z" fill="#4285F4"/><path d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.4 7 29 5 24 5c-7.7 0-14.3 4.1-17.7 9.7z" fill="#EA4335"/><path d="M24 43c5.2 0 9.6-1.7 13.1-4.7l-6-5.1C29.3 35 26.8 36 24 36c-5.2 0-9.6-3.4-11.2-8.1L6.5 32.8C9.9 38.6 16.4 43 24 43z" fill="#34A853"/><path d="M43.6 20H24v8h11.3c-.8 2.2-2.2 4.1-4.2 5.3l6 5.1C40.9 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z" fill="#FBBC04"/></svg>
+        Entrar com Google
+      </button>
+      <button class="btn-secondary" onclick="goTo('s-streaming')">Continuar como visitante</button>
+    </div>
+    <p style="text-align:center; font-size:12px; color:var(--text2); margin-top:24px; line-height:1.6;">Ao entrar, você concorda com nossos<br>Termos de Uso e Política de Privacidade</p>
+  </div>
+</div>
+
+<!-- STREAMINGS -->
+<div id="s-streaming" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-login')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content">
+    <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+    <div class="section-title">Seus streamings</div>
+    <div class="section-sub">Selecione os serviços que você assina. Vamos filtrar os filmes disponíveis para você.</div>
+    <div class="streaming-grid" id="streaming-grid">
+      <div class="streaming-item" data-id="netflix" onclick="toggleStreaming(this)">
+        <div class="s-logo">🎬</div>
+        <div class="s-name" style="color:#E50914;">Netflix</div>
+      </div>
+      <div class="streaming-item" data-id="prime" onclick="toggleStreaming(this)">
+        <div class="s-logo">📦</div>
+        <div class="s-name" style="color:#00A8E0;">Prime Video</div>
+      </div>
+      <div class="streaming-item" data-id="disney" onclick="toggleStreaming(this)">
+        <div class="s-logo">✨</div>
+        <div class="s-name" style="color:#0063e5;">Disney+</div>
+      </div>
+      <div class="streaming-item" data-id="hbo" onclick="toggleStreaming(this)">
+        <div class="s-logo">🟣</div>
+        <div class="s-name" style="color:#a855f7;">HBO Max</div>
+      </div>
+      <div class="streaming-item" data-id="apple" onclick="toggleStreaming(this)">
+        <div class="s-logo">🍎</div>
+        <div class="s-name" style="color:#c0c0c0;">Apple TV+</div>
+      </div>
+      <div class="streaming-item" data-id="paramount" onclick="toggleStreaming(this)">
+        <div class="s-logo">⭐</div>
+        <div class="s-name" style="color:#1565ff;">Paramount+</div>
+      </div>
+    </div>
+    <div style="margin-top:32px;">
+      <button class="btn-primary" onclick="goStreamings()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODO -->
+<div id="s-mode" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-streaming')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content">
+    <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+    <div class="section-title">Como quer buscar?</div>
+    <div class="section-sub">Escolha a forma que prefere para encontrar seu próximo filme.</div>
+    <div class="mode-card" onclick="goTo('s-search-classic')">
+      <div class="icon">🎭</div>
+      <h3>Busca Clássica</h3>
+      <p>Filtre por gênero, ator/atriz, diretor ou ano de lançamento.</p>
+      <div style="margin-top:14px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="tag selected" style="font-size:12px; padding:4px 10px; pointer-events:none;">Ação</span>
+        <span class="tag selected" style="font-size:12px; padding:4px 10px; pointer-events:none;">Tom Hanks</span>
+        <span class="tag selected" style="font-size:12px; padding:4px 10px; pointer-events:none;">Nolan</span>
+      </div>
+    </div>
+    <div class="mode-card" onclick="goTo('s-search-ai')">
+      <div class="icon">🤖</div>
+      <h3>Busca com IA</h3>
+      <p>Descreva o clima, a vibe ou a sinopse que você quer ver. A IA encontra o match perfeito.</p>
+      <div style="margin-top:12px; background:var(--surface2); border-radius:10px; padding:10px 12px; font-size:13px; color:var(--text2); font-style:italic; line-height:1.5;">"Jovens numa cabana na floresta surpreendidos por um assassino..."</div>
+    </div>
+  </div>
+</div>
+
+<!-- BUSCA CLÁSSICA -->
+<div id="s-search-classic" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-mode')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content">
+    <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+    <div class="section-title">Busca Clássica</div>
+    <div class="section-sub">Preencha um ou mais campos para refinar a busca.</div>
+
+    <div class="label">Ator / Atriz</div>
+    <input id="f-actor" class="input-field" placeholder="Ex: Tom Hanks, Meryl Streep..." autocomplete="off" />
+
+    <div class="label">Diretor</div>
+    <input id="f-director" class="input-field" placeholder="Ex: Christopher Nolan, Spielberg..." autocomplete="off" />
+
+    <div class="label">Ano de lançamento</div>
+    <input id="f-year" class="input-field" type="number" min="1900" max="2025" placeholder="Ex: 2010" />
+
+    <div class="label">Gênero</div>
+    <div class="genre-grid" id="genre-grid">
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Suspense">🔪 Suspense</div>
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Ação">💥 Ação</div>
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Infantil">🧒 Infantil</div>
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Drama">🎭 Drama</div>
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Romance">💕 Romance</div>
+      <div class="genre-item" onclick="toggleGenre(this)" data-g="Terror">👻 Terror</div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <button class="btn-primary" onclick="runClassicSearch()">🔍 Encontrar Filmes</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUSCA IA -->
+<div id="s-search-ai" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-mode')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content">
+    <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+    <div class="section-title">Busca com IA</div>
+    <div class="section-sub">Descreva o tipo de filme que você quer assistir. Quanto mais detalhes, melhor!</div>
+
+    <div style="background:var(--surface); border-radius:var(--radius); padding:14px 16px; margin-bottom:20px; border-left:3px solid var(--red);">
+      <p style="font-size:13px; color:var(--text2); line-height:1.7;">💡 <strong style="color:var(--text);">Dica:</strong> Descreva clima, personagens, cenário ou emoções. Ex: <em style="color:var(--text);">"Um filme que me faça chorar com uma história de superação"</em></p>
+    </div>
+
+    <div class="label">Descreva o que você quer assistir</div>
+    <textarea id="ai-query" class="textarea-field" placeholder="Ex: Um grupo de jovens numa casa isolada na floresta que são surpreendidos por um assassino misterioso. Quero muito suspense e terror psicológico..."></textarea>
+
+    <div style="margin-top:12px;">
+      <p style="font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Sugestões rápidas</p>
+      <div class="chip-row">
+        <span class="tag" onclick="fillExample(this)" data-text="Um filme de terror psicológico numa casa ou floresta com assassino e jovens em perigo">🔪 Terror/Slasher</span>
+        <span class="tag" onclick="fillExample(this)" data-text="Uma comédia romântica leve e divertida para assistir no fim de semana com alguém especial">💕 Romântico</span>
+        <span class="tag" onclick="fillExample(this)" data-text="Ficção científica com viagem no tempo ou sonhos, muito inteligente e filosófico">🌀 Sci-Fi</span>
+        <span class="tag" onclick="fillExample(this)" data-text="Um drama emocionante sobre superação pessoal com atuações incríveis e final marcante">🎭 Drama</span>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <button class="btn-primary" id="ai-btn" onclick="runAISearch()">✨ Buscar com IA</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTADOS CLÁSSICO -->
+<div id="s-results-classic" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-search-classic')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content" id="classic-results-content"></div>
+</div>
+
+<!-- RESULTADOS IA -->
+<div id="s-results-ai" class="screen">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="header">
+    <button class="back-btn" onclick="goTo('s-search-ai')">←</button>
+    <div class="logo">Movie<span>Match</span></div>
+  </div>
+  <div class="content" id="ai-results-content"></div>
+</div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+var selectedStreamings = [];
+var selectedGenres = [];
+
+var streamingNames = {netflix:'Netflix', prime:'Prime Video', disney:'Disney+', hbo:'HBO Max', apple:'Apple TV+', paramount:'Paramount+'};
+var streamingColors = {netflix:'#E50914', prime:'#00A8E0', disney:'#0063e5', hbo:'#a855f7', apple:'#c0c0c0', paramount:'#1565ff'};
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function toggleStreaming(el) {
+  el.classList.toggle('selected');
+  var id = el.dataset.id;
+  if (el.classList.contains('selected')) {
+    if (selectedStreamings.indexOf(id) === -1) selectedStreamings.push(id);
+  } else {
+    selectedStreamings = selectedStreamings.filter(function(s){ return s !== id; });
+  }
+}
+
+function goStreamings() {
+  if (selectedStreamings.length === 0) { showToast('Selecione ao menos um streaming!'); return; }
+  goTo('s-mode');
+}
+
+function toggleGenre(el) {
+  var wasSelected = el.classList.contains('selected');
+  document.querySelectorAll('.genre-item').forEach(function(g){ g.classList.remove('selected'); });
+  if (!wasSelected) { el.classList.add('selected'); selectedGenres = [el.dataset.g]; }
+  else { selectedGenres = []; }
+}
+
+function fillExample(el) {
+  document.getElementById('ai-query').value = el.dataset.text;
+  document.querySelectorAll('#s-search-ai .tag').forEach(function(t){ t.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(function(){ t.style.opacity = '0'; }, 2800);
+}
+
+function streamingBadge(sid, inLib) {
+  if (!sid) return '<span class="badge" style="background:rgba(150,150,150,0.15); color:#888; border:1px solid #444;">⚠️ Indisponível</span>';
+  var name = streamingNames[sid] || sid;
+  var col = streamingColors[sid] || '#666';
+  var icon = inLib ? '✅' : '🔗';
+  return '<span class="badge" style="background:' + col + '22; color:' + col + '; border:1px solid ' + col + '44;">' + icon + ' ' + name + '</span>';
+}
+
+function makeMovieCard(m, matchPct) {
+  var inLib = m.streaming && selectedStreamings.indexOf(m.streaming) !== -1;
+  var notInLib = m.streaming && !inLib;
+  var badge = streamingBadge(m.streaming, inLib);
+  var warnBox = '';
+  if (notInLib) {
+    var sname = streamingNames[m.streaming];
+    var scol = streamingColors[m.streaming];
+    warnBox = '<div class="warn-box">📢 Este filme está no <strong>' + sname + '</strong>, que você não assina. <a onclick="showToast(\'Abrindo oferta especial do ' + sname + '...\')">Ver promoção →</a></div>';
+  }
+  var matchBadge = matchPct ? '<span class="badge badge-match">Match ' + matchPct + '%</span>' : '';
+  return '<div class="movie-card">' +
+    '<div class="movie-poster" style="background:linear-gradient(135deg,' + (m.color||'#1a1a2e') + ',' + (m.color2||'#101020') + ');">' + (m.poster||'🎬') + '</div>' +
+    '<div class="movie-info">' +
+    '<div class="match-header"><div class="movie-title">' + m.title + '</div>' + matchBadge + '</div>' +
+    '<div class="movie-meta">⭐ ' + m.rating + ' &nbsp;•&nbsp; ' + m.year + ' &nbsp;•&nbsp; ' + m.duration + '</div>' +
+    '<div style="margin-bottom:10px;">' + badge + '</div>' +
+    warnBox +
+    '<div class="movie-desc">' + m.desc + '</div>' +
+    '<div class="divider"></div>' +
+    '<div style="font-size:13px; color:var(--text2); margin-bottom:6px;"><strong style="color:var(--text);">Diretor:</strong> ' + m.director + '</div>' +
+    '<div style="font-size:13px; color:var(--text2); margin-bottom:6px;"><strong style="color:var(--text);">Gênero:</strong> ' + m.genre + '</div>' +
+    '<div style="font-size:13px; color:var(--text2); margin-bottom:14px;"><strong style="color:var(--text);">Elenco:</strong> ' + m.cast + '</div>' +
+    '<a class="trailer-btn" href="' + m.trailer + '" target="_blank">▶️ Assistir Trailer no YouTube</a>' +
+    '</div></div>';
+}
+
+var classicDB = [
+  {title:'Forrest Gump', year:1994, rating:'8.8', duration:'2h 22m', genre:'Drama', director:'Robert Zemeckis', cast:'Tom Hanks, Robin Wright', streaming:'netflix', poster:'🪶', color:'#1a3a4a', color2:'#0d2233', desc:'A história extraordinária de um homem simples que testemunha os maiores eventos do século XX através de sua jornada de vida.', trailer:'https://www.youtube.com/watch?v=bLvqoHBptjg', actors:['tom hanks'], genres:['Drama']},
+  {title:'Cast Away — Náufrago', year:2000, rating:'7.8', duration:'2h 23m', genre:'Drama/Aventura', director:'Robert Zemeckis', cast:'Tom Hanks, Helen Hunt', streaming:'prime', poster:'🏝️', color:'#2d4a1e', color2:'#1a3a0d', desc:'Um executivo de FedEx fica preso sozinho em uma ilha deserta após um acidente de avião e luta para sobreviver.', trailer:'https://www.youtube.com/watch?v=kYVYSRecOQ0', actors:['tom hanks'], genres:['Drama']},
+  {title:'Philadelphia', year:1993, rating:'7.7', duration:'2h 5m', genre:'Drama', director:'Jonathan Demme', cast:'Tom Hanks, Denzel Washington', streaming:'hbo', poster:'⚖️', color:'#1a1a3a', color2:'#0d0d2e', desc:'Um advogado com AIDS processa seu ex-empregador por demissão injusta, num processo que desafia o preconceito.', trailer:'https://www.youtube.com/watch?v=A6Gj7_cCF44', actors:['tom hanks'], genres:['Drama']},
+  {title:'Inception — A Origem', year:2010, rating:'8.8', duration:'2h 28m', genre:'Ficção Científica/Ação', director:'Christopher Nolan', cast:'Leonardo DiCaprio, Joseph Gordon-Levitt', streaming:'hbo', poster:'🌀', color:'#1a1a3e', color2:'#0d0d2e', desc:'Um ladrão especializado em roubar segredos dos sonhos recebe a missão de plantar uma ideia na mente de um empresário.', trailer:'https://www.youtube.com/watch?v=YoHD9XEInc0', actors:[], genres:['Ação']},
+  {title:'Interestelar', year:2014, rating:'8.6', duration:'2h 49m', genre:'Ficção Científica', director:'Christopher Nolan', cast:'Matthew McConaughey, Anne Hathaway', streaming:'netflix', poster:'🚀', color:'#0a0a1a', color2:'#050518', desc:'Exploradores viajam por um buraco de minhoca no espaço buscando um novo lar para a humanidade enquanto a Terra está morrendo.', trailer:'https://www.youtube.com/watch?v=zSWdZVtXT7E', actors:[], genres:['Ação']},
+  {title:'O Cavaleiro das Trevas', year:2008, rating:'9.0', duration:'2h 32m', genre:'Ação/Suspense', director:'Christopher Nolan', cast:'Christian Bale, Heath Ledger', streaming:'hbo', poster:'🦇', color:'#0a0a0a', color2:'#050505', desc:'Batman enfrenta o Coringa, um criminoso que semeia o caos em Gotham City e testa os limites morais do herói.', trailer:'https://www.youtube.com/watch?v=EXeTwQWrcwY', actors:[], genres:['Ação', 'Suspense']},
+  {title:'O Diabo Veste Prada', year:2006, rating:'6.9', duration:'1h 49m', genre:'Comédia/Drama', director:'David Frankel', cast:'Meryl Streep, Anne Hathaway', streaming:'disney', poster:'👗', color:'#3a1a3a', color2:'#2d0d2d', desc:'Uma jovem aspirante a jornalista enfrenta os desafios de trabalhar como assistente de uma poderosa editora de moda.', trailer:'https://www.youtube.com/watch?v=MFBiMJdT4vk', actors:['meryl streep'], genres:['Drama', 'Romance']},
+  {title:'Kramer vs. Kramer', year:1979, rating:'7.8', duration:'1h 45m', genre:'Drama', director:'Robert Benton', cast:'Dustin Hoffman, Meryl Streep', streaming:'prime', poster:'👨‍👦', color:'#2a1a0a', color2:'#1a0d05', desc:'Um pai solteiro luta para criar seu filho enquanto enfrenta uma batalha judicial pela guarda com sua ex-esposa.', trailer:'https://www.youtube.com/watch?v=RNkW-Z-FMHA', actors:['meryl streep'], genres:['Drama']},
+  {title:'A Bela e a Fera', year:2017, rating:'7.1', duration:'2h 9m', genre:'Musical/Romance', director:'Bill Condon', cast:'Emma Watson, Dan Stevens', streaming:'disney', poster:'🌹', color:'#2a1a0a', color2:'#1a0d05', desc:'Uma jovem corajosa aprende que a verdadeira beleza está no interior ao se apaixonar por um príncipe amaldiçoado.', trailer:'https://www.youtube.com/watch?v=e3Nl_TCQXuw', actors:[], genres:['Romance', 'Infantil']},
+  {title:'Moana — Um Mar de Aventuras', year:2016, rating:'7.6', duration:'1h 47m', genre:'Animação/Aventura', director:'Ron Clements', cast:'Auli\'i Cravalho, Dwayne Johnson', streaming:'disney', poster:'🌊', color:'#0d2a3a', color2:'#05162a', desc:'A filha de um chefe polinésio parte em uma aventura épica para salvar seu povo, guiada por um semideus.', trailer:'https://www.youtube.com/watch?v=LKFuXETZUsI', actors:[], genres:['Infantil']},
+  {title:'Titanic', year:1997, rating:'7.9', duration:'3h 14m', genre:'Romance/Drama', director:'James Cameron', cast:'Leonardo DiCaprio, Kate Winslet', streaming:'paramount', poster:'🚢', color:'#0d1a2a', color2:'#050d1a', desc:'Uma história de amor impossível entre dois jovens de classes sociais opostas a bordo do famoso navio que afundou.', trailer:'https://www.youtube.com/watch?v=2e-eXJ6HgkQ', actors:[], genres:['Romance', 'Drama']},
+  {title:'Psicose (Psycho)', year:1960, rating:'8.5', duration:'1h 49m', genre:'Suspense/Terror', director:'Alfred Hitchcock', cast:'Anthony Perkins, Janet Leigh', streaming:'netflix', poster:'🚿', color:'#1a0d0d', color2:'#0d0505', desc:'Uma secretária em fuga se hospeda num motel isolado e encontra o perturbador Norman Bates e sua misteriosa mãe.', trailer:'https://www.youtube.com/watch?v=NG31QUiQgXw', actors:[], genres:['Suspense', 'Terror']},
+];
+
+function runClassicSearch() {
+  var actor = document.getElementById('f-actor').value.toLowerCase().trim();
+  var director = document.getElementById('f-director').value.toLowerCase().trim();
+  var year = document.getElementById('f-year').value.trim();
+  var genre = selectedGenres[0] || '';
+
+  if (!actor && !director && !year && !genre) { showToast('Preencha ao menos um campo!'); return; }
+
+  var results = classicDB.filter(function(m) {
+    if (actor && m.cast.toLowerCase().indexOf(actor) === -1 && m.actors.every(function(a){ return a.indexOf(actor) === -1; })) return false;
+    if (director && m.director.toLowerCase().indexOf(director) === -1) return false;
+    if (year && m.year.toString() !== year) return false;
+    if (genre && m.genres.indexOf(genre) === -1 && m.genre.indexOf(genre) === -1) return false;
+    return true;
+  });
+
+  var html = '';
+  if (results.length === 0) {
+    html = '<div style="text-align:center; padding:48px 0;">' +
+      '<div style="font-size:56px; margin-bottom:18px;">🎭</div>' +
+      '<div style="font-size:20px; font-weight:700; margin-bottom:10px;">Nenhum match encontrado</div>' +
+      '<div style="font-size:14px; color:var(--text2); margin-bottom:28px; line-height:1.6;">Não encontramos filmes com esses filtros.<br>Que tal tentar outros critérios?</div>' +
+      '<button class="btn-secondary" onclick="goTo(\'s-search-classic\')" style="max-width:220px; margin:0 auto; display:block;">← Refinar Busca</button></div>';
+  } else {
+    var inLib = results.filter(function(m){ return selectedStreamings.indexOf(m.streaming) !== -1; });
+    var outLib = results.filter(function(m){ return selectedStreamings.indexOf(m.streaming) === -1; });
+    html = '<div style="margin-bottom:20px;"><div class="section-title">🎯 ' + results.length + ' match' + (results.length>1?'es':'') + ' encontrado' + (results.length>1?'s':'') + '!</div>' +
+      '<div style="font-size:14px; color:var(--text2);">' + inLib.length + ' disponível' + (inLib.length!==1?'is':'') + ' nos seus streamings.</div></div>';
+    inLib.forEach(function(m){ html += makeMovieCard(m, null); });
+    if (outLib.length > 0) {
+      html += '<div style="background:rgba(230,126,34,0.08); border:1px solid rgba(230,126,34,0.3); border-radius:var(--radius); padding:14px; margin-bottom:16px;">' +
+        '<p style="font-size:13px; color:#e67e22; font-weight:700; margin-bottom:4px;">📺 ' + outLib.length + ' filme' + (outLib.length>1?'s':'') + ' em outros streamings</p>' +
+        '<p style="font-size:13px; color:var(--text2);">Estes filmes batem com sua busca, mas estão em plataformas que você não assina.</p></div>';
+      outLib.forEach(function(m){ html += makeMovieCard(m, null); });
+    }
+    html += '<button class="btn-secondary" onclick="goTo(\'s-search-classic\')">← Nova Busca</button>';
+  }
+  document.getElementById('classic-results-content').innerHTML = html;
+  goTo('s-results-classic');
+}
+
+var aiDB = [
+  {title:'A Cabana (The Cabin in the Woods)', year:2011, rating:'7.0', duration:'1h 35m', genre:'Terror/Suspense', director:'Drew Goddard', cast:'Chris Hemsworth, Anna Hutchison', streaming:'netflix', poster:'🏚️', color:'#1a0d0d', color2:'#0d0505', desc:'Cinco amigos vão a uma cabana remota na floresta onde descobrem que forças sinistras controlam tudo ao seu redor.', trailer:'https://www.youtube.com/watch?v=IHVfkBm0QwE', baseMatch:100, keywords:['casa','floresta','assassino','jovens','cabana','terror','suspense','grupo','amigos']},
+  {title:'Sexta-Feira 13 (Friday the 13th)', year:1980, rating:'6.4', duration:'1h 35m', genre:'Terror/Slasher', director:'Sean S. Cunningham', cast:'Betsy Palmer, Adrienne King', streaming:'hbo', poster:'⛺', color:'#0d1a0d', color2:'#050d05', desc:'Um grupo de jovens conselheiros tenta reabrir um acampamento de verão e começa a ser eliminado por um assassino misterioso.', trailer:'https://www.youtube.com/watch?v=ZkFDjTMUMEg', baseMatch:87, keywords:['assassino','floresta','grupo','jovens','terror','acampamento']},
+  {title:'Corrida de Morte (Wrong Turn)', year:2003, rating:'5.9', duration:'1h 24m', genre:'Terror/Suspense', director:'Rob Schmidt', cast:'Eliza Dushku, Desmond Harrington', streaming:'prime', poster:'🌲', color:'#1a1a0d', color2:'#0d0d05', desc:'Seis jovens ficam presos em uma floresta e são caçados por assassinos deformados que habitam as montanhas.', trailer:'https://www.youtube.com/watch?v=Q08iKvQH6mE', baseMatch:80, keywords:['floresta','assassino','jovens','terror','suspense','grupo','presos']},
+  {title:'Pânico (Scream)', year:1996, rating:'7.4', duration:'1h 51m', genre:'Terror/Slasher', director:'Wes Craven', cast:'Neve Campbell, Courteney Cox', streaming:'paramount', poster:'😱', color:'#1a0d1a', color2:'#0d050d', desc:'Uma adolescente e seus amigos são perseguidos por um assassino mascarado que usa regras de filmes de terror.', trailer:'https://www.youtube.com/watch?v=a7TQLhCi3A0', baseMatch:74, keywords:['assassino','jovens','casa','terror','suspense','amigos']},
+  {title:'Blair Witch — A Bruxa de Blair', year:1999, rating:'6.5', duration:'1h 21m', genre:'Terror', director:'Daniel Myrick', cast:'Heather Donahue, Michael Williams', streaming:'netflix', poster:'🌑', color:'#0d0d0d', color2:'#050505', desc:'Três estudantes de cinema desaparecem na floresta após ir investigar a lenda da Bruxa de Blair, deixando apenas as filmagens.', trailer:'https://www.youtube.com/watch?v=9OxKmGkO-p4', baseMatch:68, keywords:['floresta','jovens','terror','misterioso','assustador','estudantes']},
+  {title:'Halloween — A Noite do Terror', year:1978, rating:'7.7', duration:'1h 31m', genre:'Terror/Slasher', director:'John Carpenter', cast:'Donald Pleasence, Jamie Lee Curtis', streaming:'hbo', poster:'🎃', color:'#1a0a0a', color2:'#0d0505', desc:'Um assassino em série escapa de uma instituição psiquiátrica e volta à sua cidade natal para aterrorizar adolescentes.', trailer:'https://www.youtube.com/watch?v=K8DFJbCqgQM', baseMatch:62, keywords:['assassino','terror','jovens','casa','noite','slasher']},
+  {title:'Gravidade (Gravity)', year:2013, rating:'7.7', duration:'1h 31m', genre:'Ficção Científica/Suspense', director:'Alfonso Cuarón', cast:'Sandra Bullock, George Clooney', streaming:'hbo', poster:'🌌', color:'#050510', color2:'#030308', desc:'Uma médica e um astronauta lutam para sobreviver após um acidente no espaço os deixa à deriva longe da Terra.', trailer:'https://www.youtube.com/watch?v=OiTiKOy59o4', baseMatch:40, keywords:['suspense','sobrevivência','espaço','aventura','tensão']},
+  {title:'Midsommar — O Mal Não Espera a Noite', year:2019, rating:'7.1', duration:'2h 28m', genre:'Terror/Drama', director:'Ari Aster', cast:'Florence Pugh, Jack Reynor', streaming:'prime', poster:'🌸', color:'#1a1a0a', color2:'#0d0d05', desc:'Um grupo de amigos viaja à Suécia para um festival folclórico que acontece a cada 90 anos e descobre rituais perturbadores.', trailer:'https://www.youtube.com/watch?v=1Vnghdsjmd0', baseMatch:72, keywords:['grupo','terror','jovens','ritual','psicológico','amigos','floresta']},
+];
+
+function runAISearch() {
+  var query = document.getElementById('ai-query').value.trim().toLowerCase();
+  if (!query || query.length < 10) { showToast('Descreva melhor o que você quer assistir!'); return; }
+
+  var btn = document.getElementById('ai-btn');
+  btn.innerHTML = '<span class="spin">⏳</span> Analisando com IA...';
+  btn.disabled = true;
+
+  setTimeout(function() {
+    var scored = aiDB.map(function(m) {
+      var score = m.baseMatch;
+      var matched = m.keywords.filter(function(k){ return query.indexOf(k) !== -1; });
+      if (matched.length >= 3) score = Math.min(100, score + 15);
+      else if (matched.length === 2) score = Math.min(100, score + 8);
+      else if (matched.length === 0) score = Math.max(15, score - 35);
+      return Object.assign({}, m, {finalScore: score});
+    });
+    scored.sort(function(a,b){ return b.finalScore - a.finalScore; });
+
+    var html = '<div style="margin-bottom:20px;">' +
+      '<div class="section-title">✨ Matches da IA</div>' +
+      '<div style="font-size:14px; color:var(--text2); line-height:1.6;">Para o que você busca, encontramos essas opções ordenadas por compatibilidade:</div></div>';
+
+    scored.forEach(function(m) { html += makeMovieCard(m, m.finalScore); });
+    html += '<button class="btn-secondary" onclick="goTo(\'s-search-ai\')">← Nova Busca</button>';
+
+    document.getElementById('ai-results-content').innerHTML = html;
+    btn.innerHTML = '✨ Buscar com IA';
+    btn.disabled = false;
+    goTo('s-results-ai');
+  }, 2200);
+}
+</script>
+</body>
+</html>
